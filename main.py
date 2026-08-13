@@ -3,8 +3,7 @@ import argparse
 from dotenv import load_dotenv
 from openai import OpenAI
 from prompts import system_prompt
-from functions.call_function import available_functions
-import json
+from functions.call_function import available_functions, call_function
 
 
 load_dotenv()
@@ -33,13 +32,12 @@ response = client.chat.completions.create(
     messages=messages,
     tools=available_functions
 )
+result_message = call_function(response.choices[0].message.tool_calls[0], verbose=args.verbose)
 if args.verbose:
-    print("User prompt: " + args.user_prompt)
-    print("Prompt tokens: " + str(response.usage.prompt_tokens))
-    print("Response tokens: " + str(response.usage.completion_tokens))
-for tool_call in response.choices[0].message.tool_calls:
-    function_args = json.loads(tool_call.function.arguments or "{}")
-    print(f"Calling function: {tool_call.function.name}({function_args})")
+    # print("User prompt: " + args.user_prompt)
+    # print("Prompt tokens: " + str(response.usage.prompt_tokens))
+    # print("Response tokens: " + str(response.usage.completion_tokens))
+    print(f"-> {result_message['content']}")
 print("Response:")
 print(response.choices[0].message.content)
 
