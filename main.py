@@ -27,18 +27,29 @@ messages = [
     {"role": "system", "content": system_prompt},
     {"role": "user", "content": args.user_prompt},
 ]
-response = client.chat.completions.create(
-    model="openrouter/free",
-    messages=messages,
-    tools=available_functions
-)
-result_message = call_function(response.choices[0].message.tool_calls[0], verbose=args.verbose)
-if args.verbose:
-    # print("User prompt: " + args.user_prompt)
-    # print("Prompt tokens: " + str(response.usage.prompt_tokens))
-    # print("Response tokens: " + str(response.usage.completion_tokens))
-    print(f"-> {result_message['content']}")
-print("Response:")
-print(response.choices[0].message.content)
+for _ in range(20):
+    response = client.chat.completions.create(
+        model="openrouter/free",
+        messages=messages,
+        tools=available_functions
+    )
+    message = response.choices[0].message
+    messages.append(message)
+    if not message.tool_calls:
+        print("Final response:")
+        print(message.content)
+        break
+    for tool_call in message.tool_calls:
+        result_message = call_function(
+            tool_call,
+            verbose=args.verbose,
+        )
 
+        messages.append(result_message)
 
+        if args.verbose:
+            print(f"-> {result_message['content']}")
+    
+else:
+    print("Maximum iterations reached without a final response.")
+    exit(1)
